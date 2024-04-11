@@ -8,12 +8,26 @@
 <button id="run">Run</button>
 <button id="cancel">Cancel</button>
 <script>
+  const getExt = (fileName) => {
+    const index = fileName.lastIndexOf(".");
+    if (index === -1) {
+      return "";
+    }
+    return fileName.slice(index);
+  };
+
   const getFileContents = (file) => {
     const name = file.name;
+
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = function (e) {
-        resolve({ name: name.replace(".js", ""), content: e.target.result });
+        const ext = getExt(name);
+        resolve({
+          name: name.replace(ext, ""),
+          content: e.target.result,
+          ext,
+        });
       };
       reader.readAsText(file);
     });

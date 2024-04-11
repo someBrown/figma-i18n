@@ -1,13 +1,21 @@
+type plainObject = {
+  [key: string]: string | string[];
+};
+
 type PlainLangContent = {
-  name: "string";
+  name: string;
   content: string;
+  ext: string;
 };
 
 type LangContent = {
-  name: "string";
-  content: {
-    [key: string]: string | string[];
-  };
+  name: string;
+  content: plainObject;
+};
+
+type msgType = {
+  type: string;
+  payload: PlainLangContent[];
 };
 
 figma.showUI(__html__);
@@ -22,10 +30,13 @@ const esModuleToObj = (str: string) => {
 
 const handleLangContent = (payload: PlainLangContent[]): LangContent[] =>
   payload.map((item) => {
-    const { name, content } = item;
-
-    const _newContent = esModuleToObj(content);
-
+    const { name, content, ext } = item;
+    let _newContent: plainObject = {};
+    if (ext.endsWith("js")) {
+      _newContent = esModuleToObj(content);
+    } else {
+      _newContent = JSON.parse(content);
+    }
     return { name, content: _newContent };
   });
 
@@ -55,15 +66,12 @@ const contentsToFigma = async (langContents: LangContent[]) => {
   for (const langContent of langContents) {
     const { name, content } = langContent;
     const curFrame = template.clone();
-    curFrame.name = name;
+    curFrame.name = `${template.name}-${name}`;
     await replaceText(curFrame, content);
   }
 };
 
-figma.ui.onmessage = async (msg: {
-  type: string;
-  payload: PlainLangContent[];
-}) => {
+figma.ui.onmessage = async (msg: msgType) => {
   const { type: msgType, payload } = msg;
   if (msgType === "run") {
     const langContents = handleLangContent(payload);
@@ -71,5 +79,5 @@ figma.ui.onmessage = async (msg: {
     await contentsToFigma(langContents);
   }
 
-  // figma.closePlugin();
+  figma.closePlugin();
 };
