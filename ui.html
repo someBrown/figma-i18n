@@ -1,0 +1,41 @@
+<style>
+  h2 {
+    color: red;
+  }
+</style>
+<h2>请上传多语言文件 i18n json格式</h2>
+<input id="file" type="file" multiple />
+<button id="run">Run</button>
+<button id="cancel">Cancel</button>
+<script>
+  const getFileContents = (file) => {
+    const name = file.name;
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        resolve({ name: name.replace(".js", ""), content: e.target.result });
+      };
+      reader.readAsText(file);
+    });
+  };
+
+  const setUpListener = () => {
+    document.getElementById("run").onclick = async () => {
+      const files = document.getElementById("file").files;
+
+      const contents = await Promise.all(
+        Array.from(files).map((file) => getFileContents(file))
+      );
+      parent.postMessage(
+        { pluginMessage: { type: "run", payload: contents } },
+        "*"
+      );
+    };
+
+    document.getElementById("cancel").onclick = () => {
+      parent.postMessage({ pluginMessage: { type: "cancel" } }, "*");
+    };
+  };
+
+  setUpListener();
+</script>
